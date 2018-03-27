@@ -16,20 +16,20 @@
  * limitations under the License.
  */
 
-#include "modem.h"
-#include "debug.h"
-#include "log.h"
+#include "oss7modem.h"
 #include "errors.h"
 #include "fifo.h"
-#include "alp.h"
-#include "scheduler.h"
-#include "timer.h"
+//#include "alp.h"
+#include "xtimer.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #define RX_BUFFER_SIZE 256
 #define CMD_BUFFER_SIZE 256
+
+#define BAUDRATE 115200
+
 
 
 typedef struct {
@@ -39,16 +39,17 @@ typedef struct {
   uint8_t buffer[256];
 } command_t;
 
-static uart_handle_t* uart_handle;
+static uart_t uart_handle;
 static modem_callbacks_t* callbacks;
 static fifo_t rx_fifo;
 static uint8_t rx_buffer[RX_BUFFER_SIZE];
 static command_t command; // TODO only one active command supported for now
-static uint8_t next_tag_id = 0;
-static bool parsed_header = false;
-static uint8_t payload_len = 0;
 
-static void process_serial_frame(fifo_t* fifo) {  
+/*static uint8_t next_tag_id = 0;
+static bool parsed_header = false;
+static uint8_t payload_len = 0;*/
+
+/*static void process_serial_frame(fifo_t* fifo) {  
 
   bool command_completed = false;
   bool completed_with_error = false;
@@ -136,41 +137,44 @@ static void process_rx_fifo() {
     parsed_header = false;
   }
 }
+ */
 
-static void rx_cb(uint8_t byte) {
+static void rx_cb(void * arg, uint8_t byte) {
+	(void) arg; // keep compiler happy
   fifo_put_byte(&rx_fifo, byte);
-  if(!sched_is_scheduled(&process_rx_fifo))
-    sched_post_task_prio(&process_rx_fifo, MAX_PRIORITY);
 }
 
+/*
 static void send(uint8_t* buffer, uint8_t len) {
   uint8_t header[] = {'A', 'T', '$', 'D', 0xC0, 0x00, len };
   uart_send_bytes(uart_handle, header, sizeof(header));
   uart_send_bytes(uart_handle, buffer, len);
   log_print_string("> %i bytes @ %i", len, timer_get_counter_value());
 }
+ */
 
-void modem_init(uart_handle_t* uart, modem_callbacks_t* cbs) {
-  assert(uart != NULL);
-
+void modem_init(uart_t uart, modem_callbacks_t* cbs) {
+	assert(uart != 0);
+	
   uart_handle = uart;
   callbacks = cbs;
   fifo_init(&rx_fifo, rx_buffer, RX_BUFFER_SIZE);
 
-  sched_register_task(&process_rx_fifo);
-
-  // TODO for now we keep uart enabled so we can use RX IRQ.
-  // can be optimized later if GPIO IRQ lines are implemented.
-  assert(uart_enable(uart_handle));
-  uart_set_rx_interrupt_callback(uart_handle, &rx_cb);
-  assert(uart_rx_interrupt_enable(uart_handle) == SUCCESS);
+	// create thread
+  /*kernel_pid_t pid = thread_create(rx_thread_stack, sizeof(rx_thread_stack), THREAD_PRIORITY_MAIN -1, 
+		0 , rx_thread , NULL, "D7_rx_parser");
+		
+	assert(pid != EINVAL);
+	assert(pid != EOVERFLOW); */
+  
+	uart_init(uart_handle, BAUDRATE, rx_cb, NULL);
 }
 
-void modem_reinit() {
+void modem_reinit(void) {
   command.is_active = false;
 }
 
-bool modem_execute_raw_alp(uint8_t* alp, uint8_t len) {
+/*bool modem_execute_raw_alp(uint8_t* alp, uint8_t len) {
   send(alp, len);
 }
 
@@ -223,3 +227,4 @@ bool modem_send_raw_unsolicited_response(uint8_t* alp_command, uint32_t length,
   send(command.buffer, fifo_get_size(&command.fifo));
   return true;
 }
+*/

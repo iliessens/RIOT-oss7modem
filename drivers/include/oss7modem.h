@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-#include "d7ap.h"
-#include "hwuart.h"
+//#include "d7ap.h"
+#include "periph/uart.h"
+#include "stdbool.h"
 
 // TODO for now we are assuming running on OSS-7, we can refactor later
 // so it is more portable
@@ -30,9 +31,9 @@ typedef struct {
     modem_return_file_data_callback_t return_file_data_callback;
 } modem_callbacks_t;
 
-void modem_init(uart_handle_t* uart_handle, modem_callbacks_t* callbacks);
-void modem_reinit();
-bool modem_execute_raw_alp(uint8_t* alp, uint8_t len);
-bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size);
-bool modem_send_unsolicited_response(uint8_t file_id, uint32_t offset, uint32_t length, uint8_t* data, d7ap_master_session_config_t* d7_interface_config);
-bool modem_send_raw_unsolicited_response(uint8_t* alp_command, uint32_t length, d7ap_master_session_config_t* d7_interface_config);
+void modem_init(uart_t uart_handle, modem_callbacks_t* callbacks);
+void modem_reinit(void);
+//bool modem_execute_raw_alp(uint8_t* alp, uint8_t len);
+//bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size);
+//bool modem_send_unsolicited_response(uint8_t file_id, uint32_t offset, uint32_t length, uint8_t* data, d7ap_master_session_config_t* d7_interface_config);
+//bool modem_send_raw_unsolicited_response(uint8_t* alp_command, uint32_t length, d7ap_master_session_config_t* d7_interface_config);

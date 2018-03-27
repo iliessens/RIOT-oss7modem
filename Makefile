@@ -17,7 +17,7 @@ QUIET ?= 1
 
 # do not fail build on warning
 # some code in ALP not compliant C99
-WERROR = 0
+#WERROR = 0
 
 EXTERNAL_MODULE_DIRS += $(RIOTPROJECT)/drivers/oss7modem
 USEMODULE += oss7modem
