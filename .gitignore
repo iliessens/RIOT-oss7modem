@@ -55,5 +55,5 @@ dkms.conf
 *.workspace
 *.project
 *.mk
-codelite/
+.codelite/
 bin/

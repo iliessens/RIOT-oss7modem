@@ -19,7 +19,8 @@
 #include "oss7modem.h"
 #include "errors.h"
 #include "fifo.h"
-//#include "alp.h"
+#include "alp.h"
+#include "log.h"
 
 #include "xtimer.h"
 #include "thread.h"
@@ -50,9 +51,15 @@ static char rx_thread_stack[THREAD_STACKSIZE_MAIN];
 // mutex that controls the rx thread
 static mutex_t rx_mutex = MUTEX_INIT_LOCKED;
 
-/*static uint8_t next_tag_id = 0;
+//static uint8_t next_tag_id = 0;
 static bool parsed_header = false;
-static uint8_t payload_len = 0;*/
+static uint8_t payload_len = 0;
+
+// temp placeholder
+static void process_serial_frame(fifo_t* fifo) { 
+	(void) fifo;
+	puts("Processing frame... Or not.");
+}
 
 /*static void process_serial_frame(fifo_t* fifo) {  
 
@@ -99,34 +106,39 @@ static uint8_t payload_len = 0;*/
     command.is_active = false;
   }
 }
+ */
 
-static void process_rx_fifo() {
+static void process_rx_fifo(void) {
   if(!parsed_header) {
     // <sync byte (0xC0)><version (0x00)><length of ALP command (1 byte)><ALP command> // TODO CRC
     if(fifo_get_size(&rx_fifo) > SERIAL_ALP_FRAME_HEADER_SIZE) {
         uint8_t header[SERIAL_ALP_FRAME_HEADER_SIZE];
         fifo_peek(&rx_fifo, header, 0, SERIAL_ALP_FRAME_HEADER_SIZE);
-        log_print_data(header, 3); // TODO tmp
+
         if(header[0] != SERIAL_ALP_FRAME_SYNC_BYTE || header[1] != SERIAL_ALP_FRAME_VERSION) {
           fifo_skip(&rx_fifo, 1);
           log_print_string("skip");
           parsed_header = false;
           payload_len = 0;
-          if(fifo_get_size(&rx_fifo) > SERIAL_ALP_FRAME_HEADER_SIZE)
-            sched_post_task(&process_rx_fifo);
+          if(fifo_get_size(&rx_fifo) < SERIAL_ALP_FRAME_HEADER_SIZE)
+            mutex_lock(&rx_mutex); // if header NOK --> wait for data
 
-          return;
+          return; // If enough header available --> re-run
         }
 
         parsed_header = true;
         fifo_skip(&rx_fifo, SERIAL_ALP_FRAME_HEADER_SIZE);
         payload_len = header[2];
         log_print_string("found header, payload size = %i", payload_len);
-        sched_post_task(&process_rx_fifo);
+		
+		// implicit return, task will re-run to parse payload
     }
   } else {
     if(fifo_get_size(&rx_fifo) < payload_len) {
       log_print_string("payload not complete yet");
+	  
+	  // stop task
+	  mutex_lock(&rx_mutex);
       return;
     }
 
@@ -140,9 +152,11 @@ static void process_rx_fifo() {
     // pop parsed bytes from original fifo
     fifo_skip(&rx_fifo, payload_len - fifo_get_size(&payload_fifo));
     parsed_header = false;
+	
+	// stop task
+	mutex_lock(&rx_mutex);
   }
 }
- */
 
 static void rx_cb(void * arg, uint8_t byte) {
 	(void) arg; // keep compiler happy
@@ -160,7 +174,7 @@ void * rx_thread(void * arg) {
 		// if unlocked --> there is data to process
 		mutex_lock(&rx_mutex);
 		
-		puts("Data received...");
+		process_rx_fifo();
 	}
 	
 	return NULL;
