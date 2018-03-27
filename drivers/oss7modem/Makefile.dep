@@ -1,0 +1,3 @@
+ifneq (,$(filter mt3333,$(USEMODULE)))
+	USEMODULE += fifo
+endif
