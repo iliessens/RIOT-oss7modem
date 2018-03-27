@@ -19,10 +19,19 @@ QUIET ?= 1
 # some code in ALP not compliant C99
 #WERROR = 0
 
+USEMODULE += shell
+USEMODULE += shell_commands
+USEMODULE += ps # debug threads
+
+USEMODULE += auto_init # voor timer init
+USEMODULE += xtimer
+
+#Should be automatic dependency
+EXTERNAL_MODULE_DIRS += $(RIOTPROJECT)/drivers/fifo
+USEMODULE += fifo
+
 EXTERNAL_MODULE_DIRS += $(RIOTPROJECT)/drivers/oss7modem
 USEMODULE += oss7modem
-#extra dependency path
-EXTERNAL_MODULE_DIRS += $(RIOTPROJECT)/drivers/fifo
 
 INCLUDES += -I$(RIOTPROJECT)/drivers/include
 

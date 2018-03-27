@@ -20,7 +20,10 @@
 #include "errors.h"
 #include "fifo.h"
 //#include "alp.h"
+
 #include "xtimer.h"
+#include "thread.h"
+#include "mutex.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,8 +32,6 @@
 #define CMD_BUFFER_SIZE 256
 
 #define BAUDRATE 115200
-
-
 
 typedef struct {
   uint8_t tag_id;
@@ -44,6 +45,10 @@ static modem_callbacks_t* callbacks;
 static fifo_t rx_fifo;
 static uint8_t rx_buffer[RX_BUFFER_SIZE];
 static command_t command; // TODO only one active command supported for now
+
+static char rx_thread_stack[THREAD_STACKSIZE_MAIN];
+// mutex that controls the rx thread
+static mutex_t rx_mutex = MUTEX_INIT_LOCKED;
 
 /*static uint8_t next_tag_id = 0;
 static bool parsed_header = false;
@@ -142,6 +147,23 @@ static void process_rx_fifo() {
 static void rx_cb(void * arg, uint8_t byte) {
 	(void) arg; // keep compiler happy
   fifo_put_byte(&rx_fifo, byte);
+  
+  // start processing thread
+  mutex_unlock(&rx_mutex);
+}
+
+void * rx_thread(void * arg) {
+	(void) arg; // supress warning
+	
+	while(true) { // keep processing thread running forever
+		//wait untill mutex available
+		// if unlocked --> there is data to process
+		mutex_lock(&rx_mutex);
+		
+		puts("Data received...");
+	}
+	
+	return NULL;
 }
 
 /*
@@ -161,11 +183,13 @@ void modem_init(uart_t uart, modem_callbacks_t* cbs) {
   fifo_init(&rx_fifo, rx_buffer, RX_BUFFER_SIZE);
 
 	// create thread
-  /*kernel_pid_t pid = thread_create(rx_thread_stack, sizeof(rx_thread_stack), THREAD_PRIORITY_MAIN -1, 
+  kernel_pid_t pid = thread_create(rx_thread_stack, sizeof(rx_thread_stack), THREAD_PRIORITY_MAIN -1, 
 		0 , rx_thread , NULL, "D7_rx_parser");
 		
+	puts("Thread created");
+		
 	assert(pid != EINVAL);
-	assert(pid != EOVERFLOW); */
+	assert(pid != EOVERFLOW);
   
 	uart_init(uart_handle, BAUDRATE, rx_cb, NULL);
 }
