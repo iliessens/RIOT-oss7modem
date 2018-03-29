@@ -42,7 +42,6 @@ alp_operation_t alp_get_operation(uint8_t* alp_command)
     return alp_ctrl.operation;
 }
 
-/*
 static uint32_t parse_length_operand(fifo_t* cmd_fifo) {
   uint8_t len = 0;
   fifo_pop(cmd_fifo, (uint8_t*)&len, 1);
@@ -54,7 +53,6 @@ static uint32_t parse_length_operand(fifo_t* cmd_fifo) {
   fifo_pop(cmd_fifo, (uint8_t*)&full_length, field_len);
   return full_length;
 }
- */
 
 void alp_append_length_operand(fifo_t* fifo, uint32_t length) {
   if(length < 64) {
@@ -79,14 +77,13 @@ void alp_append_length_operand(fifo_t* fifo, uint32_t length) {
   } while(size > 0);
 }
 
-/*
+
 static alp_operand_file_offset_t parse_file_offset_operand(fifo_t* cmd_fifo) {
   alp_operand_file_offset_t operand;
   error_t err = fifo_pop(cmd_fifo, &operand.file_id, 1); assert(err == SUCCESS);
   operand.offset = parse_length_operand(cmd_fifo);
   return operand;
 }
- */
 
 void alp_append_file_offset_operand(fifo_t* fifo, uint8_t file_id, uint32_t offset) {
   assert(fifo_put_byte(fifo, file_id) == SUCCESS);
@@ -148,7 +145,7 @@ static void add_interface_status_action(fifo_t* alp_response_fifo, d7ap_session_
 }
 */
 
-/*
+
 uint8_t alp_addressee_id_length(d7ap_addressee_id_type_t id_type)
 {
     switch(id_type)
@@ -166,7 +163,6 @@ uint8_t alp_addressee_id_length(d7ap_addressee_id_type_t id_type)
     }
 }
 
-
 static void parse_op_return_file_data(fifo_t* fifo, alp_action_t* action) {
   action->file_data_operand.file_offset = parse_file_offset_operand(fifo);
   action->file_data_operand.provided_data_length = parse_length_operand(fifo);
@@ -174,6 +170,7 @@ static void parse_op_return_file_data(fifo_t* fifo, alp_action_t* action) {
   fifo_pop(fifo, action->file_data_operand.data, action->file_data_operand.provided_data_length);
   log_print_string("parsed file data file %i, len %i", action->file_data_operand.file_offset.file_id, action->file_data_operand.provided_data_length);
 }
+/*
 
 static void parse_op_return_tag(fifo_t* fifo, alp_action_t* action, bool b6, bool b7) {
   action->tag_response.completed = b7;
@@ -206,6 +203,7 @@ static void parse_op_return_status(fifo_t* fifo, alp_action_t* action, bool b6, 
   assert(fifo_pop(fifo, action->d7_interface_status.addressee.id, addressee_len) == SUCCESS);
   log_print_string("parsed interface status");
 }
+*/
 
 void alp_parse_action(fifo_t* fifo, alp_action_t* action) {
   uint8_t op;
@@ -218,20 +216,25 @@ void alp_parse_action(fifo_t* fifo, alp_action_t* action) {
     case ALP_OP_RETURN_FILE_DATA:
       parse_op_return_file_data(fifo, action);
       break;
-    case ALP_OP_RETURN_TAG:
+/*    case ALP_OP_RETURN_TAG:
       parse_op_return_tag(fifo, action, b6, b7);
       break;
     case ALP_OP_RETURN_STATUS:
       parse_op_return_status(fifo, action, b6, b7);
-      break;
+      break;*/
     default:
       log_print_string("op %x not implemented", op);
       assert(false);
   }
+  
+  // compiler happy :)
+  (void) b6;
+  (void) b7;
 
   log_print_string("parsed action");
 }
 
+/*
 uint8_t alp_get_expected_response_length(uint8_t* alp_command, uint8_t alp_command_length) {
   uint8_t expected_response_length = 0;
   uint8_t* ptr = alp_command;

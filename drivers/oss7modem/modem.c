@@ -55,13 +55,12 @@ static mutex_t rx_mutex = MUTEX_INIT_LOCKED;
 static bool parsed_header = false;
 static uint8_t payload_len = 0;
 
-// temp placeholder
-static void process_serial_frame(fifo_t* fifo) { 
-	(void) fifo;
-	puts("Processing frame... Or not.");
+// RIOT alternative adapter
+long timer_get_counter_value(void) {
+	return xtimer_now_usec();
 }
 
-/*static void process_serial_frame(fifo_t* fifo) {  
+static void process_serial_frame(fifo_t* fifo) {  
 
   bool command_completed = false;
   bool completed_with_error = false;
@@ -80,11 +79,13 @@ static void process_serial_frame(fifo_t* fifo) {
         }
         break;
       case ALP_OP_RETURN_FILE_DATA:
-        if(callbacks->return_file_data_callback)
+       /* if(callbacks->return_file_data_callback)
           callbacks->return_file_data_callback(action.file_data_operand.file_offset.file_id,
                                                action.file_data_operand.file_offset.offset,
                                                action.file_data_operand.provided_data_length,
-                                               action.file_data_operand.data);
+                                               action.file_data_operand.data);*/
+		// TODO Imre define own callback
+		puts("File data received");
         break;
       case ALP_OP_RETURN_STATUS: ;
         uint8_t addressee_len = alp_addressee_id_length(action.d7_interface_status.addressee.ctrl.id_type);
@@ -106,7 +107,6 @@ static void process_serial_frame(fifo_t* fifo) {
     command.is_active = false;
   }
 }
- */
 
 
 static void process_rx_fifo(void) {
