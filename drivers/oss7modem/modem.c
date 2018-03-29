@@ -54,9 +54,20 @@ static mutex_t rx_mutex = MUTEX_INIT_LOCKED;
 static bool parsed_header = false;
 static uint8_t payload_len = 0;
 
-// RIOT alternative adapter
+// RIOT adapter for clock
 long timer_get_counter_value(void) {
 	return xtimer_now_usec();
+}
+
+// alternative for callback
+void receiveFile(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* output_buffer) {
+	if(command.is_active) puts("Response to command");
+	printf("File received:\n");
+	printf("File id: %d\n",file_id);
+	
+	printf("File data: ");
+	log_print_data(output_buffer,size);
+	(void) offset;
 }
 
 static void process_serial_frame(fifo_t* fifo) {  
@@ -83,8 +94,10 @@ static void process_serial_frame(fifo_t* fifo) {
                                                action.file_data_operand.file_offset.offset,
                                                action.file_data_operand.provided_data_length,
                                                action.file_data_operand.data);*/
-		// TODO Imre define own callback
-		puts("File data received");
+		receiveFile(action.file_data_operand.file_offset.file_id,
+                                               action.file_data_operand.file_offset.offset,
+                                               action.file_data_operand.provided_data_length,
+                                               action.file_data_operand.data);
         break;
       case ALP_OP_RETURN_STATUS: ;
         uint8_t addressee_len = alp_addressee_id_length(action.d7_interface_status.addressee.ctrl.id_type);
