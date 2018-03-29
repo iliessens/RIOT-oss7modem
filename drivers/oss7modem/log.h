@@ -2,6 +2,6 @@
 #define LOG_H
 
 //Imre's log polyfill
-#define log_print_string printf
+void log_print_string(char* format,...);
 
 #endif
