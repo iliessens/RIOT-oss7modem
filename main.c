@@ -10,7 +10,15 @@ int readUID(int argc,char** argv) {
 	(void) argv;
 	
 	// read 8 bytes from the beginning of the first file
-	modem_read_file(0,0,8);
+	modem_read_result_t result;
+	modem_read_file(0,0,8, &result);
+	
+	printf("\nUID: ");
+	for(unsigned int i =0; i< result.length; i++) {
+		printf("%02X",result.data[i]);
+	}
+	printf("\n");
+	
 	return 0;
 }
 

@@ -49,11 +49,13 @@ static command_t command; // TODO only one active command supported for now
 static char rx_thread_stack[THREAD_STACKSIZE_MAIN];
 // mutex that controls the rx thread
 static mutex_t rx_mutex = MUTEX_INIT_LOCKED;
+static mutex_t cmd_mutex = MUTEX_INIT_LOCKED;
 
 // keeps track of the used Id's
 static uint8_t next_tag_id = 0;
 static bool parsed_header = false;
 static uint8_t payload_len = 0;
+static alp_action_t action;
 
 // RIOT adapter for clock
 long timer_get_counter_value(void) {
@@ -76,7 +78,6 @@ static void process_serial_frame(fifo_t* fifo) {
   bool command_completed = false;
   bool completed_with_error = false;
   while(fifo_get_size(fifo)) {
-    alp_action_t action;
     alp_parse_action(fifo, &action);
 
     switch(action.operation) {
@@ -90,11 +91,6 @@ static void process_serial_frame(fifo_t* fifo) {
         }
         break;
       case ALP_OP_RETURN_FILE_DATA:
-       /* if(callbacks->return_file_data_callback)
-          callbacks->return_file_data_callback(action.file_data_operand.file_offset.file_id,
-                                               action.file_data_operand.file_offset.offset,
-                                               action.file_data_operand.provided_data_length,
-                                               action.file_data_operand.data);*/
 		receiveFile(action.file_data_operand.file_offset.file_id,
                                                action.file_data_operand.file_offset.offset,
                                                action.file_data_operand.provided_data_length,
@@ -114,11 +110,11 @@ static void process_serial_frame(fifo_t* fifo) {
 
   if(command_completed) {
     log_print_string("command with tag %i completed @ %i", command.tag_id, timer_get_counter_value());
-    //if(callbacks->command_completed_callback)
-    //  callbacks->command_completed_callback(completed_with_error);
-
-	(void) completed_with_error;
+	
+	(void) completed_with_error; 
     command.is_active = false;
+	
+	mutex_unlock(&cmd_mutex);
   }
 }
 
@@ -204,6 +200,18 @@ static void send(uint8_t* buffer, uint8_t len) {
   log_print_string("> %i bytes @ %i", len, timer_get_counter_value());
 }
 
+static bool blocking_send(uint8_t* buffer, uint8_t len) {
+	
+	mutex_trylock(&cmd_mutex); // make sure locked without blocking
+	
+	send(buffer,len);
+	
+	mutex_lock(&cmd_mutex); // try to lock again, should block until ready
+	
+	// misschien global vervangen door IPC?
+	return action.tag_response.error;
+}
+
 void modem_init(uart_t uart) {
   uart_handle = uart;
   fifo_init(&rx_fifo, rx_buffer, RX_BUFFER_SIZE);
@@ -244,15 +252,34 @@ bool alloc_command(void) {
   return true;
 }
 
-bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size) {
+// TODO maybe remove async versions
+bool modem_read_file_async(uint8_t file_id, uint32_t offset, uint32_t size) {
   if(!alloc_command())
     return false;
 
   alp_append_read_file_data_action(&command.fifo, file_id, offset, size, true, false);
 
-  send(command.buffer, fifo_get_size(&command.fifo));
+  blocking_send(command.buffer, fifo_get_size(&command.fifo));
 
   return true;
+}
+
+bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read_result_t* result) {
+  if(!alloc_command())
+    return false;
+
+  alp_append_read_file_data_action(&command.fifo, file_id, offset, size, true, false);
+
+  bool success = blocking_send(command.buffer, fifo_get_size(&command.fifo));
+  result->length = action.file_data_operand.provided_data_length;
+
+	//TODO remove array copying
+	for(unsigned int i =0; i < result->length; i++) {
+		result->data[i] = action.file_data_operand.data[i];
+	}
+  (void) result;
+
+  return success;
 }
 
 /*

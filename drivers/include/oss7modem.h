@@ -32,9 +32,15 @@
 } modem_callbacks_t;
  */
 
+typedef struct {
+	uint32_t length;
+    uint8_t data[255]; // TODO fixed size?
+} modem_read_result_t;
+
 void modem_init(uart_t uart_handle);
 void modem_reinit(void);
 //bool modem_execute_raw_alp(uint8_t* alp, uint8_t len);
-bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size);
+bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read_result_t* result);
+bool modem_read_file_async(uint8_t file_id, uint32_t offset, uint32_t size);
 //bool modem_send_unsolicited_response(uint8_t file_id, uint32_t offset, uint32_t length, uint8_t* data, d7ap_master_session_config_t* d7_interface_config);
 //bool modem_send_raw_unsolicited_response(uint8_t* alp_command, uint32_t length, d7ap_master_session_config_t* d7_interface_config);
