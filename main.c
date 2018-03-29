@@ -10,8 +10,8 @@ const shell_command_t shell_commands[] = {
 
 int main(void)
 {
-	// UART2
-	modem_init(1, NULL);
+	// UARTB
+	modem_init(UART_DEV(1), NULL);
 	
 	char line_buf[SHELL_DEFAULT_BUFSIZE];
 	// won't go past this normally

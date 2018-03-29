@@ -108,6 +108,7 @@ static void process_serial_frame(fifo_t* fifo) {
 }
  */
 
+
 static void process_rx_fifo(void) {
   if(!parsed_header) {
     // <sync byte (0xC0)><version (0x00)><length of ALP command (1 byte)><ALP command> // TODO CRC
@@ -123,7 +124,7 @@ static void process_rx_fifo(void) {
           if(fifo_get_size(&rx_fifo) < SERIAL_ALP_FRAME_HEADER_SIZE)
             mutex_lock(&rx_mutex); // if header NOK --> wait for data
 
-          return; // If enough header available --> re-run
+          return; // Enough header available --> re-run
         }
 
         parsed_header = true;
@@ -160,10 +161,10 @@ static void process_rx_fifo(void) {
 
 static void rx_cb(void * arg, uint8_t byte) {
 	(void) arg; // keep compiler happy
-  fifo_put_byte(&rx_fifo, byte);
+	fifo_put_byte(&rx_fifo, byte);
   
-  // start processing thread
-  mutex_unlock(&rx_mutex);
+	// start processing thread
+	mutex_unlock(&rx_mutex);
 }
 
 void * rx_thread(void * arg) {
@@ -190,8 +191,6 @@ static void send(uint8_t* buffer, uint8_t len) {
  */
 
 void modem_init(uart_t uart, modem_callbacks_t* cbs) {
-	assert(uart != 0);
-	
   uart_handle = uart;
   callbacks = cbs;
   fifo_init(&rx_fifo, rx_buffer, RX_BUFFER_SIZE);
@@ -200,8 +199,8 @@ void modem_init(uart_t uart, modem_callbacks_t* cbs) {
   kernel_pid_t pid = thread_create(rx_thread_stack, sizeof(rx_thread_stack), THREAD_PRIORITY_MAIN -1, 
 		0 , rx_thread , NULL, "D7_rx_parser");
 		
-	puts("Thread created");
-		
+	printf("Thread created: id %d\n", pid);
+	
 	assert(pid != EINVAL);
 	assert(pid != EOVERFLOW);
   
