@@ -42,7 +42,6 @@ typedef struct {
 } command_t;
 
 static uart_t uart_handle;
-static modem_callbacks_t* callbacks;
 static fifo_t rx_fifo;
 static uint8_t rx_buffer[RX_BUFFER_SIZE];
 static command_t command; // TODO only one active command supported for now
@@ -101,9 +100,10 @@ static void process_serial_frame(fifo_t* fifo) {
 
   if(command_completed) {
     log_print_string("command with tag %i completed @ %i", command.tag_id, timer_get_counter_value());
-    if(callbacks->command_completed_callback)
-      callbacks->command_completed_callback(completed_with_error);
+    //if(callbacks->command_completed_callback)
+    //  callbacks->command_completed_callback(completed_with_error);
 
+	(void) completed_with_error;
     command.is_active = false;
   }
 }
@@ -174,6 +174,7 @@ void * rx_thread(void * arg) {
 		//wait untill mutex available
 		// if unlocked --> there is data to process
 		mutex_lock(&rx_mutex);
+		mutex_unlock(&rx_mutex); // keep unlocked untill locked elsewhere
 		
 		process_rx_fifo();
 	}
@@ -190,9 +191,8 @@ static void send(uint8_t* buffer, uint8_t len) {
 }
  */
 
-void modem_init(uart_t uart, modem_callbacks_t* cbs) {
+void modem_init(uart_t uart) {
   uart_handle = uart;
-  callbacks = cbs;
   fifo_init(&rx_fifo, rx_buffer, RX_BUFFER_SIZE);
 
 	// create thread

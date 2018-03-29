@@ -23,15 +23,16 @@
 // TODO for now we are assuming running on OSS-7, we can refactor later
 // so it is more portable
 
-typedef void (*modem_command_completed_callback_t)(bool with_error);
-typedef void (*modem_return_file_data_callback_t)(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* output_buffer);
+//typedef void (*modem_command_completed_callback_t)(bool with_error);
+//typedef void (*modem_return_file_data_callback_t)(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* output_buffer);
 
-typedef struct {
+/*typedef struct {
     modem_command_completed_callback_t command_completed_callback;
     modem_return_file_data_callback_t return_file_data_callback;
 } modem_callbacks_t;
+ */
 
-void modem_init(uart_t uart_handle, modem_callbacks_t* callbacks);
+void modem_init(uart_t uart_handle);
 void modem_reinit(void);
 //bool modem_execute_raw_alp(uint8_t* alp, uint8_t len);
 //bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size);
