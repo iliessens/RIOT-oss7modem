@@ -5,7 +5,17 @@
 
 #include "oss7modem.h"
 
+int readUID(int argc,char** argv) {
+	(void) argc;
+	(void) argv;
+	
+	// read 8 bytes from the beginning of the first file
+	modem_read_file(0,0,8);
+	return 0;
+}
+
 const shell_command_t shell_commands[] = {
+	{"readUID","Read UID of modem",readUID},
 	{NULL,NULL,NULL}};
 
 int main(void)

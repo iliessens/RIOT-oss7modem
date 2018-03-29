@@ -50,7 +50,8 @@ static char rx_thread_stack[THREAD_STACKSIZE_MAIN];
 // mutex that controls the rx thread
 static mutex_t rx_mutex = MUTEX_INIT_LOCKED;
 
-//static uint8_t next_tag_id = 0;
+// keeps track of the used Id's
+static uint8_t next_tag_id = 0;
 static bool parsed_header = false;
 static uint8_t payload_len = 0;
 
@@ -195,14 +196,13 @@ void * rx_thread(void * arg) {
 	return NULL;
 }
 
-/*
+
 static void send(uint8_t* buffer, uint8_t len) {
   uint8_t header[] = {'A', 'T', '$', 'D', 0xC0, 0x00, len };
-  uart_send_bytes(uart_handle, header, sizeof(header));
-  uart_send_bytes(uart_handle, buffer, len);
+  uart_write(uart_handle, header, sizeof(header));
+  uart_write(uart_handle, buffer, len);
   log_print_string("> %i bytes @ %i", len, timer_get_counter_value());
 }
- */
 
 void modem_init(uart_t uart) {
   uart_handle = uart;
@@ -228,7 +228,8 @@ void modem_reinit(void) {
   send(alp, len);
 }
 
-bool alloc_command() {
+*/
+bool alloc_command(void) {
   if(command.is_active) {
     log_print_string("prev command still active @ %i", timer_get_counter_value());
     return false;
@@ -254,6 +255,7 @@ bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size) {
   return true;
 }
 
+/*
 bool modem_send_unsolicited_response(uint8_t file_id, uint32_t offset, uint32_t length, uint8_t* data,
                                      d7ap_master_session_config_t* d7_interface_config) {
   if(!alloc_command())

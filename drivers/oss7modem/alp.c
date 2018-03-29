@@ -170,7 +170,7 @@ static void parse_op_return_file_data(fifo_t* fifo, alp_action_t* action) {
   fifo_pop(fifo, action->file_data_operand.data, action->file_data_operand.provided_data_length);
   log_print_string("parsed file data file %i, len %i", action->file_data_operand.file_offset.file_id, action->file_data_operand.provided_data_length);
 }
-/*
+
 
 static void parse_op_return_tag(fifo_t* fifo, alp_action_t* action, bool b6, bool b7) {
   action->tag_response.completed = b7;
@@ -179,6 +179,7 @@ static void parse_op_return_tag(fifo_t* fifo, alp_action_t* action, bool b6, boo
   log_print_string("parsed return tag %i, eop %i, err %i", action->tag_response.tag_id, action->tag_response.completed, action->tag_response.error);
 }
 
+/*
 static void parse_op_return_status(fifo_t* fifo, alp_action_t* action, bool b6, bool b7) {
   assert(b6 && !b7); // TODO implement action status
   uint8_t itf_id;
@@ -216,21 +217,16 @@ void alp_parse_action(fifo_t* fifo, alp_action_t* action) {
     case ALP_OP_RETURN_FILE_DATA:
       parse_op_return_file_data(fifo, action);
       break;
-/*    case ALP_OP_RETURN_TAG:
+    case ALP_OP_RETURN_TAG:
       parse_op_return_tag(fifo, action, b6, b7);
       break;
-    case ALP_OP_RETURN_STATUS:
+    /*case ALP_OP_RETURN_STATUS:
       parse_op_return_status(fifo, action, b6, b7);
       break;*/
     default:
       log_print_string("op %x not implemented", op);
       assert(false);
   }
-  
-  // compiler happy :)
-  (void) b6;
-  (void) b7;
-
   log_print_string("parsed action");
 }
 
