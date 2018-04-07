@@ -63,6 +63,7 @@ long timer_get_counter_value(void) {
 }
 
 // alternative for callback
+// TODO maybe remove this
 void receiveFile(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* output_buffer) {
 	if(command.is_active) puts("Response to command");
 	printf("File received:\n");
@@ -220,7 +221,7 @@ void modem_init(uart_t uart) {
   kernel_pid_t pid = thread_create(rx_thread_stack, sizeof(rx_thread_stack), THREAD_PRIORITY_MAIN -1, 
 		0 , rx_thread , NULL, "D7_rx_parser");
 		
-	printf("Thread created: id %d\n", pid);
+	printf("OSS7 thread created: id %d\n", pid);
 	
 	assert(pid != EINVAL);
 	assert(pid != EOVERFLOW);
@@ -271,6 +272,10 @@ bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read
   alp_append_read_file_data_action(&command.fifo, file_id, offset, size, true, false);
 
   bool success = blocking_send(command.buffer, fifo_get_size(&command.fifo));
+  
+  // something else than expected was returned
+  if(action.operation != ALP_OP_RETURN_FILE_DATA) return false;
+  
   result->length = action.file_data_operand.provided_data_length;
 
 	//TODO remove array copying
