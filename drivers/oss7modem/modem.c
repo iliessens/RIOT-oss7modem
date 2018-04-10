@@ -147,6 +147,7 @@ static void process_rx_fifo(void) {
           if(fifo_get_size(&rx_fifo) < SERIAL_ALP_FRAME_HEADER_SIZE)
             mutex_lock(&rx_mutex); // if header NOK --> wait for data
 
+			mutex_unlock(&rx_mutex);
           return; // Enough header available --> re-run
         }
 
@@ -156,13 +157,13 @@ static void process_rx_fifo(void) {
         log_print_string("found header, payload size = %i", payload_len);
 		
 		// implicit return, task will re-run to parse payload
+		mutex_unlock(&rx_mutex);
     }
   } else {
     if(fifo_get_size(&rx_fifo) < payload_len) {
       log_print_string("payload not complete yet");
 	  
 	  // stop task
-	  mutex_lock(&rx_mutex);
       return;
     }
 
@@ -178,7 +179,7 @@ static void process_rx_fifo(void) {
     parsed_header = false;
 	
 	// stop task
-	mutex_lock(&rx_mutex);
+	//task will stop
   }
 }
 
@@ -197,7 +198,7 @@ void * rx_thread(void * arg) {
 		//wait untill mutex available
 		// if unlocked --> there is data to process
 		mutex_lock(&rx_mutex);
-		mutex_unlock(&rx_mutex); // keep unlocked untill locked elsewhere
+		//mutex_unlock(&rx_mutex); // keep unlocked untill locked elsewhere
 		
 		process_rx_fifo();
 	}
@@ -226,17 +227,15 @@ static bool blocking_send(uint8_t* buffer, uint8_t len) {
 }
 
 bool test_comm(void) {
-	modem_read_result_t result;
-	result.length = 0; // init
-	file_return = &result;
+	mutex_trylock(&cmd_mutex); // make sure is locked
 	
 	bool alloc = modem_read_file_async(0,0,8); // reads UID
 	if(alloc == false) return false;
 	
-	xtimer_sleep(1); // max time for init
+	int result = xtimer_mutex_lock_timeout(&cmd_mutex, 500); // wait max 1s for acquire
 	
-	if(result.length == 0) return false; // no data returned
-	else return true;
+	if(result == -1) return false; // timeout occured
+	else return true; // mutex lock was acquired on time
 }
 
 void modem_init(uart_t uart) {
@@ -252,8 +251,12 @@ void modem_init(uart_t uart) {
 	assert(pid != EINVAL);
 	assert(pid != EOVERFLOW);
   
-	uart_init(uart_handle, BAUDRATE, rx_cb, NULL);
+	int uart_state = uart_init(uart_handle, BAUDRATE, rx_cb, NULL);
 	
+	if(uart_state != UART_OK) {
+		puts("Error initializing UART!");
+		return;
+	}
 	if(!test_comm()) puts("Modem init failed!");
 }
 
