@@ -198,7 +198,6 @@ void * rx_thread(void * arg) {
 		//wait untill mutex available
 		// if unlocked --> there is data to process
 		mutex_lock(&rx_mutex);
-		//mutex_unlock(&rx_mutex); // keep unlocked untill locked elsewhere
 		
 		process_rx_fifo();
 	}
@@ -245,16 +244,16 @@ void modem_init(uart_t uart) {
 	// create thread
   kernel_pid_t pid = thread_create(rx_thread_stack, sizeof(rx_thread_stack), THREAD_PRIORITY_MAIN -1, 
 		0 , rx_thread , NULL, "D7_rx_parser");
-		
-	printf("OSS7 thread created: id %d\n", pid);
 	
 	assert(pid != EINVAL);
 	assert(pid != EOVERFLOW);
+	
+	printf("OSS7 thread created: id %d\n", pid);
   
 	int uart_state = uart_init(uart_handle, BAUDRATE, rx_cb, NULL);
 	
 	if(uart_state != UART_OK) {
-		puts("Error initializing UART!");
+		puts("Error initializing UART for modem!");
 		return;
 	}
 	if(!test_comm()) puts("Modem init failed!");
