@@ -55,7 +55,7 @@ static mutex_t cmd_mutex = MUTEX_INIT_LOCKED;
 static uint8_t next_tag_id = 0;
 static bool parsed_header = false;
 static uint8_t payload_len = 0;
-static alp_action_t action;
+static modem_read_result_t* file_return;
 
 // RIOT adapter for clock
 long timer_get_counter_value(void) {
@@ -72,6 +72,17 @@ void receiveFile(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* outpu
 	printf("File data: ");
 	log_print_data(output_buffer,size);
 	(void) offset;
+	
+	if(file_return != NULL) { // synchronous read
+	file_return->length = size;
+	
+			//TODO remove array copying
+		for(unsigned int i =0; i < size; i++) {
+			file_return->data[i] = output_buffer[i];
+		}
+		
+		file_return = NULL; // clear internal pointer for next use
+	}
 }
 
 static void process_serial_frame(fifo_t* fifo) {  
@@ -79,6 +90,7 @@ static void process_serial_frame(fifo_t* fifo) {
   bool command_completed = false;
   bool completed_with_error = false;
   while(fifo_get_size(fifo)) {
+	alp_action_t action;
     alp_parse_action(fifo, &action);
 
     switch(action.operation) {
@@ -198,7 +210,7 @@ static void send(uint8_t* buffer, uint8_t len) {
   uint8_t header[] = {'A', 'T', '$', 'D', 0xC0, 0x00, len };
   uart_write(uart_handle, header, sizeof(header));
   uart_write(uart_handle, buffer, len);
-  log_print_string("> %i bytes @ %i", len, timer_get_counter_value());
+  log_print_string("> %i bytes @ %i\n", len, timer_get_counter_value());
 }
 
 static bool blocking_send(uint8_t* buffer, uint8_t len) {
@@ -209,8 +221,22 @@ static bool blocking_send(uint8_t* buffer, uint8_t len) {
 	
 	mutex_lock(&cmd_mutex); // try to lock again, should block until ready
 	
-	// misschien global vervangen door IPC?
-	return action.tag_response.error;
+	// misschien error doorgeven via IPC?
+	return true;
+}
+
+bool test_comm(void) {
+	modem_read_result_t result;
+	result.length = 0; // init
+	file_return = &result;
+	
+	bool alloc = modem_read_file_async(0,0,8); // reads UID
+	if(alloc == false) return false;
+	
+	xtimer_sleep(1); // max time for init
+	
+	if(result.length == 0) return false; // no data returned
+	else return true;
 }
 
 void modem_init(uart_t uart) {
@@ -227,6 +253,8 @@ void modem_init(uart_t uart) {
 	assert(pid != EOVERFLOW);
   
 	uart_init(uart_handle, BAUDRATE, rx_cb, NULL);
+	
+	if(!test_comm()) puts("Modem init failed!");
 }
 
 void modem_reinit(void) {
@@ -259,8 +287,7 @@ bool modem_read_file_async(uint8_t file_id, uint32_t offset, uint32_t size) {
     return false;
 
   alp_append_read_file_data_action(&command.fifo, file_id, offset, size, true, false);
-
-  blocking_send(command.buffer, fifo_get_size(&command.fifo));
+  send(command.buffer, fifo_get_size(&command.fifo));
 
   return true;
 }
@@ -269,19 +296,15 @@ bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read
   if(!alloc_command())
     return false;
 
+	file_return = result; // put pointer so rx can use it
+
   alp_append_read_file_data_action(&command.fifo, file_id, offset, size, true, false);
 
   bool success = blocking_send(command.buffer, fifo_get_size(&command.fifo));
   
   // something else than expected was returned
-  if(action.operation != ALP_OP_RETURN_FILE_DATA) return false;
-  
-  result->length = action.file_data_operand.provided_data_length;
+  if(file_return->length == 0) return false;
 
-	//TODO remove array copying
-	for(unsigned int i =0; i < result->length; i++) {
-		result->data[i] = action.file_data_operand.data[i];
-	}
   (void) result;
 
   return success;
