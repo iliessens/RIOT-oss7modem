@@ -37,6 +37,9 @@ int main(void)
 	// UARTB
 	modem_init(UART_DEV(1));
 	
+//	uint8_t data[8] = {1,2,3,4,5,6,7,8};
+//	modem_write_file(0,0,8,data);
+	
 	char line_buf[SHELL_DEFAULT_BUFSIZE];
 	// won't go past this normally
     shell_run(shell_commands, line_buf, SHELL_DEFAULT_BUFSIZE);
