@@ -12,13 +12,13 @@ int readUID(int argc,char** argv) {
 	
 	// read 8 bytes from the beginning of the first file
 	modem_read_result_t result;
-	if(modem_read_file(0,0,8, &result)) {;
+	if(modem_read_file(0,0,8, &result)) {
 	
-	printf("\nUID: ");
-	for(unsigned int i =0; i< result.length; i++) {
-		printf("%02X",result.data[i]);
-	}
-	printf("\n");
+		printf("\nUID: ");
+		for(unsigned int i =0; i< result.length; i++) {
+			printf("%02X",result.data[i]);
+		}
+		printf("\n");
 	
 	}
 	else {

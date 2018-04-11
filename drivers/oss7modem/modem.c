@@ -33,6 +33,7 @@
 #define CMD_BUFFER_SIZE 256
 
 #define BAUDRATE 115200
+#define CMD_RESPONSE_TIMEOUT 500 //ms
 
 typedef struct {
   uint8_t tag_id;
@@ -88,8 +89,6 @@ void receiveFile(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* outpu
 		for(unsigned int i =0; i < size; i++) {
 			file_return->data[i] = output_buffer[i];
 		}
-		
-		file_return = NULL; // clear internal pointer for next use
 	}
 }
 
@@ -230,22 +229,18 @@ static bool blocking_send(uint8_t* buffer, uint8_t len) {
 	
 	send(buffer,len);
 	
-	mutex_lock(&cmd_mutex); // try to lock again, should block until ready
+	int ok = xtimer_mutex_lock_timeout(&cmd_mutex, CMD_RESPONSE_TIMEOUT); // try to lock again, should block until ready
 	
+	if(ok == -1) {
+		command.is_active = false;
+		return false; // timer expired
+	}
 	
 	return return_status.status.completed;
 }
 
 bool test_comm(void) {
-	mutex_trylock(&cmd_mutex); // make sure is locked
-	
-	bool alloc = modem_read_file_async(0,0,8); // reads UID
-	if(alloc == false) return false;
-	
-	int result = xtimer_mutex_lock_timeout(&cmd_mutex, 500); // wait max 1s for acquire
-	
-	if(result == -1) return false; // timeout occured
-	else return true; // mutex lock was acquired on time
+	return modem_read_file(0,0,0,NULL); // NULL pointer should not be a problem
 }
 
 /* Init specified UART for use with OSS7modem
@@ -328,6 +323,8 @@ bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read
   
   // something else than expected was returned
   if(file_return->length == 0) return false;
+  
+	file_return = NULL; // clear internal pointer for next use
   
   return success;
 }
