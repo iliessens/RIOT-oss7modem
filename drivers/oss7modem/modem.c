@@ -71,10 +71,8 @@ long timer_get_counter_value(void) {
 	return xtimer_now_usec();
 }
 
-// alternative for callback
-// TODO maybe remove this
+
 void receiveFile(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* output_buffer) {
-	if(command.is_active) puts("Response to command");
 	printf("File received:\n");
 	printf("File id: %d\n",file_id);
 	
@@ -83,9 +81,8 @@ void receiveFile(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* outpu
 	(void) offset;
 	
 	if(file_return != NULL) { // synchronous read
-	file_return->length = size;
+		file_return->length = size;
 	
-			//TODO remove array copying
 		for(unsigned int i =0; i < size; i++) {
 			file_return->data[i] = output_buffer[i];
 		}
@@ -189,7 +186,6 @@ static void process_rx_fifo(void) {
     parsed_header = false;
 	
 	// stop task
-	//task will stop
   }
 }
 
@@ -250,11 +246,11 @@ bool test_comm(void) {
  * -2 when comm test failed
  */
 int modem_init(uart_t uart) {
-  uart_handle = uart;
-  fifo_init(&rx_fifo, rx_buffer, RX_BUFFER_SIZE);
+	uart_handle = uart;
+	fifo_init(&rx_fifo, rx_buffer, RX_BUFFER_SIZE);
 
 	// create thread
-  kernel_pid_t pid = thread_create(rx_thread_stack, sizeof(rx_thread_stack), THREAD_PRIORITY_MAIN -1, 
+	kernel_pid_t pid = thread_create(rx_thread_stack, sizeof(rx_thread_stack), THREAD_PRIORITY_MAIN -1, 
 		0 , rx_thread , NULL, "D7_rx_parser");
 	
 	assert(pid != EINVAL);
@@ -280,11 +276,10 @@ void modem_reinit(void) {
   command.is_active = false;
 }
 
-/*bool modem_execute_raw_alp(uint8_t* alp, uint8_t len) {
+bool modem_execute_raw_alp(uint8_t* alp, uint8_t len) {
   send(alp, len);
 }
 
-*/
 bool alloc_command(void) {
   if(command.is_active) {
     log_print_string("prev command still active @ %i", timer_get_counter_value());
@@ -321,10 +316,10 @@ bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read
 
   bool success = blocking_send(command.buffer, fifo_get_size(&command.fifo));
   
+  file_return = NULL; // clear internal pointer for next use
+  
   // something else than expected was returned
   if(file_return->length == 0) return false;
-  
-	file_return = NULL; // clear internal pointer for next use
   
   return success;
 }

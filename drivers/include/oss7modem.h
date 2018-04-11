@@ -39,7 +39,7 @@ typedef struct {
 
 int modem_init(uart_t uart_handle);
 void modem_reinit(void);
-//bool modem_execute_raw_alp(uint8_t* alp, uint8_t len);
+bool modem_execute_raw_alp(uint8_t* alp, uint8_t len);
 bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read_result_t* result);
 bool modem_read_file_async(uint8_t file_id, uint32_t offset, uint32_t size);
 bool modem_write_file(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* data);
