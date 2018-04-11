@@ -28,8 +28,19 @@ int readUID(int argc,char** argv) {
 	return 0;
 }
 
+int writeFile(int argc,char** argv) {
+	(void) argc;
+	(void) argv;
+	
+	uint8_t data[8] = {1,2,3,4,5,6,7,8};
+	modem_write_file(0,0,8,data);
+	
+	return 0;
+	}
+
 const shell_command_t shell_commands[] = {
 	{"readUID","Read UID of modem",readUID},
+	{"writeFile","file write test",writeFile},
 	{NULL,NULL,NULL}};
 
 int main(void)

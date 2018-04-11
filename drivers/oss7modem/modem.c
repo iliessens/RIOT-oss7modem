@@ -55,7 +55,15 @@ static mutex_t cmd_mutex = MUTEX_INIT_LOCKED;
 static uint8_t next_tag_id = 0;
 static bool parsed_header = false;
 static uint8_t payload_len = 0;
-static modem_read_result_t* file_return;
+
+static modem_read_result_t* file_return = NULL;
+
+typedef struct {
+	union {
+		bool completed;
+	} status;
+} cmd_return_status;
+static cmd_return_status return_status;
 
 // RIOT adapter for clock
 long timer_get_counter_value(void) {
@@ -124,10 +132,13 @@ static void process_serial_frame(fifo_t* fifo) {
   if(command_completed) {
     log_print_string("command with tag %i completed @ %i", command.tag_id, timer_get_counter_value());
 	
-	(void) completed_with_error; 
+	return_status.status.completed = ! completed_with_error;
     command.is_active = false;
 	
 	mutex_unlock(&cmd_mutex);
+  }
+  else {
+	  return_status.status.completed = false;
   }
 }
 
@@ -221,8 +232,8 @@ static bool blocking_send(uint8_t* buffer, uint8_t len) {
 	
 	mutex_lock(&cmd_mutex); // try to lock again, should block until ready
 	
-	// misschien error doorgeven via IPC?
-	return true;
+	
+	return return_status.status.completed;
 }
 
 bool test_comm(void) {
@@ -237,7 +248,13 @@ bool test_comm(void) {
 	else return true; // mutex lock was acquired on time
 }
 
-void modem_init(uart_t uart) {
+/* Init specified UART for use with OSS7modem
+ * 
+ * returns 0 if OK
+ * -1 on UART error
+ * -2 when comm test failed
+ */
+int modem_init(uart_t uart) {
   uart_handle = uart;
   fifo_init(&rx_fifo, rx_buffer, RX_BUFFER_SIZE);
 
@@ -254,9 +271,14 @@ void modem_init(uart_t uart) {
 	
 	if(uart_state != UART_OK) {
 		puts("Error initializing UART for modem!");
-		return;
+		return -1;
 	}
-	if(!test_comm()) puts("Modem init failed!");
+	if(!test_comm()) {
+		puts("Modem comm test failed! Check connections.");
+		return -2;
+	}
+	
+	return 0; // Everything OK
 }
 
 void modem_reinit(void) {
@@ -306,9 +328,7 @@ bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read
   
   // something else than expected was returned
   if(file_return->length == 0) return false;
-
-  (void) result;
-
+  
   return success;
 }
 
@@ -319,9 +339,7 @@ bool modem_write_file(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* 
 
   alp_append_write_file_data_action(&command.fifo, file_id, offset, size, data, true, false);
 
-  send(command.buffer, fifo_get_size(&command.fifo));
-
-  return true;
+  return blocking_send(command.buffer, fifo_get_size(&command.fifo));
 }
 
 /*

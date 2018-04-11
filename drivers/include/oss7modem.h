@@ -37,7 +37,7 @@ typedef struct {
     uint8_t data[255]; // TODO fixed size?
 } modem_read_result_t;
 
-void modem_init(uart_t uart_handle);
+int modem_init(uart_t uart_handle);
 void modem_reinit(void);
 //bool modem_execute_raw_alp(uint8_t* alp, uint8_t len);
 bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read_result_t* result);
