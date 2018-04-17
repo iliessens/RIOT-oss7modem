@@ -13,7 +13,8 @@ Op de modem:
 Uiteraard moet TX verbonden worden met RX en omgekeerd. Vergeet ook geen GND aan te sluiten.
 Sluit zowel de modem als het Nucleo-bordje aan op de PC.
 
-Om de shell van de Nucleo-L496 te kunnen bekijken moet men een FTDI-kabel verbinden met UART1. Deze bevindt zich aan de rechterkant van CN10 op D0 en D1. Deze zijn duidelijk gelabeld.
+Om de shell van de Nucleo-L496 te kunnen bekijken moet men een FTDI-kabel verbinden met UART1. Deze bevindt zich aan de rechterkant van CN10 op D0 en D1. Deze zijn duidelijk gelabeld.  
+<img src="https://imgur.com/download/pMHMJDo" alt="Voorbeeldopstelling" height="500px" />
 ### Software
 Met de volgende instructies kan je het voorbeeld snel aan de praat krijgen.
 1. Maak een werkmap aan waar je alle bestanden kan plaatsen.
