@@ -16,6 +16,7 @@
  * limitations under the License.
  */
 
+#include "oss7modem_params.h"
 #include "oss7modem.h"
 #include "errors.h"
 #include "fifo.h"
@@ -31,9 +32,6 @@
 
 #define RX_BUFFER_SIZE 256
 #define CMD_BUFFER_SIZE 256
-
-#define BAUDRATE 115200
-#define CMD_RESPONSE_TIMEOUT 500 //ms
 
 typedef struct {
   uint8_t tag_id;
@@ -225,7 +223,7 @@ static bool blocking_send(uint8_t* buffer, uint8_t len) {
 	
 	send(buffer,len);
 	
-	int ok = xtimer_mutex_lock_timeout(&cmd_mutex, CMD_RESPONSE_TIMEOUT); // try to lock again, should block until ready
+	int ok = xtimer_mutex_lock_timeout(&cmd_mutex, OSS7MODEM_CMD_TIMEOUT); // try to lock again, should block until ready
 	
 	if(ok == -1) {
 		command.is_active = false;
@@ -258,7 +256,7 @@ int modem_init(uart_t uart) {
 	
 	printf("OSS7 thread created: id %d\n", pid);
   
-	int uart_state = uart_init(uart_handle, BAUDRATE, rx_cb, NULL);
+	int uart_state = uart_init(uart_handle, OSS7MODEM_BAUDRATE, rx_cb, NULL);
 	
 	if(uart_state != UART_OK) {
 		puts("Error initializing UART for modem!");

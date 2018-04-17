@@ -22,7 +22,7 @@
 
 #define OSS7MODEM_OK 0
 #define OSS7MODEM_NORESPONSE -2
-#define OSS7MODEM_E_UART-1
+#define OSS7MODEM_E_UART -1
 
 // TODO for now we are assuming running on OSS-7, we can refactor later
 // so it is more portable

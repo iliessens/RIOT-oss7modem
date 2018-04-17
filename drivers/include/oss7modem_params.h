@@ -1,0 +1,13 @@
+#include "board.h"  /* THIS INCLUDE IS MANDATORY */
+
+#ifndef OSS7MODEM_BAUDRATE
+#define OSS7MODEM_BAUDRATE 115200
+#endif
+
+#ifndef OSS7MODEM_CMD_TIMEOUT
+#define OSS7MODEM_CMD_TIMEOUT 500
+#endif
+
+#ifndef OSS7MODEM_UART
+#define OSS7MODEM_UART UART_DEV(1)
+#endif
