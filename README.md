@@ -38,3 +38,24 @@ Ook heb je OpenOCD nodig, instructies daarvoor zijn te vinden onder: [de RIOT wi
 
 
 De terminal opent en je kan commando's uitvoeren. Typ ``help`` voor info over de mogelijkheden.
+
+Voorbeeld van de uitvoer:  
+```
+Type '/exit' to exit.
+2018-04-17 14:08:14,997 - INFO # main(): This is RIOT! (Version: 2018.04-devel-396-gb87e6-imre-VirtualBox-nucleo144_l496)
+2018-04-17 14:08:15,000 - INFO # OSS7 thread created: id 3
+2018-04-17 14:08:15,006 - INFO # append tag 0> 6 bytes found header, payload size = 2
+2018-04-17 14:08:15,010 - INFO # parsed return tag 0, eop 1, err 0
+2018-04-17 14:08:15,011 - INFO # parsed action
+2018-04-17 14:08:15,014 - INFO # command with tag 0 completed @ 20203
+2018-04-17 14:08:15,015 - INFO # pleted @
+> help
+2018-04-17 14:08:17,762 - INFO #  help
+2018-04-17 14:08:17,767 - INFO # Command              Description
+2018-04-17 14:08:17,773 - INFO # ---------------------------------------
+2018-04-17 14:08:17,774 - INFO # readUID              Read UID of modem
+2018-04-17 14:08:17,776 - INFO # writeFile            file write test
+2018-04-17 14:08:17,782 - INFO # reboot               Reboot the node
+2018-04-17 14:08:17,786 - INFO # ps                   Prints information about running threads.
+> 
+```
