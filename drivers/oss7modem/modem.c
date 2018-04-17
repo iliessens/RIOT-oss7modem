@@ -242,8 +242,8 @@ bool test_comm(void) {
 /* Init specified UART for use with OSS7modem
  * 
  * returns 0 if OK
- * -1 on UART error
- * -2 when comm test failed
+ * OSS7MODEM_E_UART on UART error
+ * OSS7MODEM_NORESPONSE when comm test failed
  */
 int modem_init(uart_t uart) {
 	uart_handle = uart;
@@ -262,14 +262,14 @@ int modem_init(uart_t uart) {
 	
 	if(uart_state != UART_OK) {
 		puts("Error initializing UART for modem!");
-		return -1;
+		return OSS7MODEM_E_UART;
 	}
 	if(!test_comm()) {
 		puts("Modem comm test failed! Check connections.");
-		return -2;
+		return OSS7MODEM_NORESPONSE;
 	}
 	
-	return 0; // Everything OK
+	return OSS7MODEM_OK; // Everything OK
 }
 
 void modem_reinit(void) {
@@ -278,6 +278,7 @@ void modem_reinit(void) {
 
 bool modem_execute_raw_alp(uint8_t* alp, uint8_t len) {
   send(alp, len);
+  return true; // TODO return useful status
 }
 
 bool alloc_command(void) {
