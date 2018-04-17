@@ -1,3 +1,4 @@
+
 # DASH7 modem for RIOT OS  
 ## Aan de slag
 ### Hardware
@@ -29,6 +30,10 @@ git checkout nucleo-l496zg
 	* Indien je deze mappenstructuur niet gevolgd hebt: pas de variabele ``RIOTBASE`` in  ``RIOT-oss7modem/Makefile`` aan zodat deze verwijst naar de RIOT-map.
 6. Open nu een terminal in de map RIOT-oss7modem. We kunnen dan de commando's uitvoeren om het programma te compileren en te flashen.
 ```sudo make BOARD=nucleo-l496zg flash term```
+
+Mocht dit niet lukken zorg er dan voor dat ``python-serial`` geïnstalleerd is.  
+Ook heb je OpenOCD nodig, instructies daarvoor zijn te vinden onder: [de RIOT wiki](https://github.com/RIOT-OS/RIOT/wiki/OpenOCD)  
+(Deze mirror kan van pas komen: http://repo.or.cz/openocd.git)
 
 
 De terminal opent en je kan commando's uitvoeren. Typ ``help`` voor info over de mogelijkheden.
