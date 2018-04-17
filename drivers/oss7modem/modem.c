@@ -217,22 +217,6 @@ static void send(uint8_t* buffer, uint8_t len) {
   log_print_string("> %i bytes @ %i\n", len, timer_get_counter_value());
 }
 
-static bool blocking_send(uint8_t* buffer, uint8_t len) {
-	
-	mutex_trylock(&cmd_mutex); // make sure locked without blocking
-	
-	send(buffer,len);
-	
-	int ok = xtimer_mutex_lock_timeout(&cmd_mutex, OSS7MODEM_CMD_TIMEOUT); // try to lock again, should block until ready
-	
-	if(ok == -1) {
-		command.is_active = false;
-		return false; // timer expired
-	}
-	
-	return return_status.status.completed;
-}
-
 bool test_comm(void) {
 	return modem_read_file(0,0,0,NULL); // NULL pointer should not be a problem
 }
@@ -306,21 +290,29 @@ bool modem_read_file_async(uint8_t file_id, uint32_t offset, uint32_t size) {
 }
 
 bool modem_read_file(uint8_t file_id, uint32_t offset, uint32_t size, modem_read_result_t* result) {
+	mutex_trylock(&cmd_mutex); // make sure locked without blocking
+	
   if(!alloc_command())
     return false;
 
 	file_return = result; // put pointer so rx can use it
 
-  alp_append_read_file_data_action(&command.fifo, file_id, offset, size, true, false);
-
-  bool success = blocking_send(command.buffer, fifo_get_size(&command.fifo));
+	alp_append_read_file_data_action(&command.fifo, file_id, offset, size, true, false);
+	send(command.buffer, fifo_get_size(&command.fifo));
+ 
+	// try to lock again, should block until ready
+ 	int ok = xtimer_mutex_lock_timeout(&cmd_mutex, OSS7MODEM_CMD_TIMEOUT); 
+	file_return = NULL; // clear internal pointer for next use
+	
+	if(ok == -1) {
+		command.is_active = false; // reset command field
+		return false; // timer expired
+	}
   
-  file_return = NULL; // clear internal pointer for next use
+	// something else than expected was returned
+	if(result->length == 0) return false;
   
-  // something else than expected was returned
-  if(file_return->length == 0) return false;
-  
-  return success;
+	return return_status.status.completed;
 }
 
 // write file added from OSS7 commit 860d6050ac43842e24db84d45af46aa22ecb3bb1
@@ -330,7 +322,9 @@ bool modem_write_file(uint8_t file_id, uint32_t offset, uint32_t size, uint8_t* 
 
   alp_append_write_file_data_action(&command.fifo, file_id, offset, size, data, true, false);
 
-  return blocking_send(command.buffer, fifo_get_size(&command.fifo));
+  send(command.buffer, fifo_get_size(&command.fifo));
+  
+  return true;
 }
 
 /*
